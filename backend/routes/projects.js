@@ -2,11 +2,17 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 const Project = require("../models/Project");
+
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../frontend/public/images/'));
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '-'));
@@ -56,17 +62,23 @@ router.get("/", async (req, res) => {
   }
 });
 
+const getAbsoluteImageUrl = (req) => {
+    const proxyHost = req.headers['x-forwarded-host'] || req.get('host');
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    return `${protocol}://${proxyHost}`;
+};
+
 router.post("/", upload.single('image'), async (req, res) => {
   try {
     const { title, description, techStack, demoLink, githubLink, adminCode } = req.body;
     
     if (adminCode !== process.env.ADMIN_CODE && adminCode !== "shahzaib123") {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Incorrect Admin Passcode" });
     }
 
     let imageUrl = "/images/placeholder.jpg";
     if (req.file) {
-      imageUrl = "/images/" + req.file.filename;
+      imageUrl = `${getAbsoluteImageUrl(req)}/uploads/${req.file.filename}`;
     } else if (req.body.image) {
       imageUrl = req.body.image;
     }
@@ -84,7 +96,7 @@ router.post("/", upload.single('image'), async (req, res) => {
     res.status(201).json(savedProject);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: error.message || "Server Error" });
   }
 });
 
@@ -93,7 +105,7 @@ router.put("/:id", upload.single('image'), async (req, res) => {
     const { title, description, techStack, demoLink, githubLink, adminCode } = req.body;
     
     if (adminCode !== process.env.ADMIN_CODE && adminCode !== "shahzaib123") {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Incorrect Admin Passcode" });
     }
 
     const updateData = {
@@ -105,7 +117,7 @@ router.put("/:id", upload.single('image'), async (req, res) => {
     };
 
     if (req.file) {
-      updateData.image = "/images/" + req.file.filename;
+      updateData.image = `${getAbsoluteImageUrl(req)}/uploads/${req.file.filename}`;
     } else if (req.body.image) {
       updateData.image = req.body.image;
     }
@@ -114,7 +126,7 @@ router.put("/:id", upload.single('image'), async (req, res) => {
     res.json(updatedProject);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: error.message || "Server Error" });
   }
 });
 
@@ -122,12 +134,12 @@ router.delete("/:id", async (req, res) => {
   try {
       const { adminCode } = req.body;
       if (adminCode !== process.env.ADMIN_CODE && adminCode !== "shahzaib123") {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Incorrect Admin Passcode" });
       }
       await Project.findByIdAndDelete(req.params.id);
       res.json({ success: true });
-  } catch(e) {
-      res.status(500).json({ error: "Server Error" });
+  } catch(error) {
+      res.status(500).json({ error: error.message || "Server Error" });
   }
 });
 

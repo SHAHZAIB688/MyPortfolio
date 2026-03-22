@@ -97,11 +97,12 @@ const Projects = () => {
         setImageFile(null);
         setEditId(null);
       } else {
-        alert("Failed to save project. Incorrect Admin Passcode.");
+        const errorData = await res.json().catch(()=>({}));
+        alert(errorData.error || "Failed to save project. Server Error.");
       }
     } catch (err) {
       console.error(err);
-      alert("Server error.");
+      alert("Network error executing request.");
     }
   };
 
@@ -117,10 +118,12 @@ const Projects = () => {
       if(res.ok) {
         setProjects(projects.filter(p => p._id !== id));
       } else {
-        alert("Failed to delete. Incorrect passcode.");
+        const errorData = await res.json().catch(()=>({}));
+        alert(errorData.error || "Failed to delete project.");
       }
     } catch(err) {
        console.error(err);
+       alert("Network error executing request.");
     }
   }
 
