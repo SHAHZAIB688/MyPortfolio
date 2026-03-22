@@ -15,9 +15,11 @@ const GitHub = () => {
     const fetchGitHubStats = async () => {
       try {
         const userRes = await fetch("https://api.github.com/users/SHAHZAIB688");
+        if (!userRes.ok) throw new Error("Rate Limit Hit");
         const userData = await userRes.json();
         
         const reposRes = await fetch("https://api.github.com/users/SHAHZAIB688/repos?per_page=100");
+        if (!reposRes.ok) throw new Error("Rate Limit Hit");
         const reposData = await reposRes.json();
         
         let totalStars = 0;
@@ -33,7 +35,12 @@ const GitHub = () => {
         });
       } catch (error) {
         console.error("Error fetching GitHub stats:", error);
-        setStats(prev => ({ ...prev, loading: false }));
+        setStats({
+          repos: 15, 
+          stars: 12,
+          followers: 1,
+          loading: false
+        });
       }
     };
 
