@@ -12,7 +12,8 @@ const Testimonials = () => {
   const [testimonials, setTestimonials] = useState(mockupTestimonials);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/testimonials")
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    fetch(`${API_URL}/api/testimonials`)
       .then(res => res.json())
       .then(data => {
         if(data && data.length > 0) setTestimonials(data);
